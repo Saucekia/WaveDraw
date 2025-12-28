@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>OSCI DRAW</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">
+      <h2>OSCI DRAW</h2>
+      <small class="mono">draw sound • domains • time</small>
+    </div>
+
+    <div class="tabs" role="tablist" aria-label="Modes">
+      <button id="tabDraw" class="tabBtn active" role="tab" aria-selected="true">Draw Mode</button>
+      <button id="tabCam" class="tabBtn" role="tab" aria-selected="false">Camera Mode</button>
+    </div>
+  </div>
+
+  <div class="hint">
+    <span class="pill">Draw Mode</span>: everything is drawn on-screen.
+    <span class="pill">Camera Mode</span>: use webcam + <b>Domains</b> read wave/time/beat from drawings.
+  </div>
+
+  <div class="wrap">
+   
+   
+    <!--LEFT STAGE-->
+    <div class="stage">
+     
+     
+     
+      <!--DRAW MODE STAGE-->
+      <div id="drawStage" class="modePanel active">
+        <div class="stack">
+          <div class="hint"><b>Waveform</b> (one-cycle timbre)</div>
+          <canvas id="wavePad" width="720" height="240"></canvas>
+
+          <div class="hint"><b>Timeline Gesture</b> (time=X, pitch=Y)</div>
+          <canvas id="timePad" width="720" height="160"></canvas>
+
+          <div class="hint"><b>Beat Preview</b></div>
+          <div id="beatPreview" class="beatPreview"></div>
+        </div>
+      </div>
+
+      
+      
+      <!--CAMERA-0MODE STAGE -->
+      <div id="camStage" class="modePanel">
+        <div class="stack">
+          <div class="hint"><b>Camera</b> (Domains overlay)</div>
+          <canvas id="camView" width="720" height="405"></canvas>
+          <div class="hint mono" id="camStatus">Camera: idle</div>
+
+          <div class="hint">
+            Domain roles:
+            <span class="pill">wave</span> reads a wavetable,
+            <span class="pill">time</span> reads pitch over time,
+            <span class="pill">beat</span> reads dots/dashes/rest.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!--RIGHT CONTROLS-->
+    <div class="panel">
+      <div class="btnRow">
+        <button id="playBtn">Play</button>
+        <button id="sineWaveBtn">Sine Wave</button>
+        <button id="clearWaveBtn">Clear Wave</button>
+        <button id="clearTimeBtn">Clear Time</button>
+      </div>
+
+      <details open>
+        <summary>
+          <span>Audio</span>
+          <span class="subhint">gain • bpm • pitch</span>
+        </summary>
+
+        <div class="kv">
+          <div>Master Gain</div>
+          <div>
+            <input id="gain" type="range" min="0" max="1" value="0.15" step="0.001" />
+            <div class="status"><span id="gainVal">0.150</span></div>
+          </div>
+        </div>
+
+        <div class="kv">
+          <div>Beat Gain</div>
+          <div>
+            <input id="beatGain" type="range" min="0" max="1" value="0.35" step="0.001" />
+            <div class="status"><span id="beatGainVal">0.350</span></div>
+          </div>
+        </div>
+
+        <div class="kv">
+          <div>BPM</div>
+          <div>
+            <input id="bpm" type="range" min="40" max="220" value="120" step="1" />
+            <div class="status"><span id="bpmVal">120</span></div>
+          </div>
+        </div>
+
+        <div class="kv">
+          <div>Pitch Range</div>
+          <div>
+            <input id="fmin" type="range" min="20" max="600" value="110" step="1" />
+            <input id="fmax" type="range" min="200" max="4000" value="880" step="1" />
+            <div class="status"><span id="fminVal">110</span> Hz → <span id="fmaxVal">880</span> Hz</div>
+          </div>
+        </div>
+      </details>
+
+      <details>
+        <summary>
+          <span>Draw Tools</span>
+          <span class="subhint">smooth • quantize</span>
+        </summary>
+
+        <div class="kv">
+          <div>Wave Smooth</div>
+          <div>
+            <input id="smooth" type="range" min="0" max="0.99" value="0.5" step="0.01" />
+            <div class="status"><span id="smoothVal">0.50</span></div>
+          </div>
+        </div>
+
+        <div class="kv">
+          <div>Time Quantize</div>
+          <div>
+            <input id="quant" type="range" min="0" max="32" value="0" step="1" />
+            <div class="status"><span id="quantVal">Off</span> (0=free, else steps/bar)</div>
+          </div>
+        </div>
+      </details>
+
+      <details>
+        <summary>
+          <span>Beat Read</span>
+          <span class="subhint">steps • dash ratio</span>
+        </summary>
+
+        <div class="kv">
+          <div>Steps/Bar</div>
+          <div>
+            <input id="beatSteps" type="range" min="4" max="32" value="16" step="1" />
+            <div class="status"><span id="beatStepsVal">16</span></div>
+          </div>
+        </div>
+
+        <div class="kv">
+          <div>Dash Ratio</div>
+          <div>
+            <input id="dashRatio" type="range" min="0.25" max="0.9" value="0.6" step="0.01" />
+            <div class="status"><span id="dashRatioVal">0.60</span></div>
+          </div>
+        </div>
+      </details>
+
+      <details id="cameraDetails">
+        <summary>
+          <span>Camera</span>
+          <span class="subhint">domains • scan</span>
+        </summary>
+
+        <div class="kv">
+          <div>Camera</div>
+          <div class="btnRow">
+            <button id="camBtn">Start Camera</button>
+            <button id="scanWaveBtn">Scan Wave OFF</button>
+            <button id="scanTimeBtn">Scan Time OFF</button>
+            <button id="scanBeatBtn">Scan Beat OFF</button>
+          </div>
+        </div>
+
+        <div class="kv">
+          <div>Threshold</div>
+          <div>
+            <input id="thresh" type="range" min="0" max="255" value="90" step="1" />
+            <div class="status"><span id="threshVal">90</span> (darkness cutoff)</div>
+          </div>
+        </div>
+
+        <div class="kv">
+          <div>Scan FPS</div>
+          <div>
+            <input id="fps" type="range" min="2" max="30" value="12" step="1" />
+            <div class="status"><span id="fpsVal">12</span></div>
+          </div>
+        </div>
+
+        <div class="kv compact">
+          <div class="btnRow">
+            <button id="addDomainBtn">Add Domain</button>
+            <button id="delDomainBtn">Delete Selected</button>
+          </div>
+        </div>
+
+        <div id="domainList" class="stack"></div>
+      </details>
+    </div>
+  </div>
+
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>
